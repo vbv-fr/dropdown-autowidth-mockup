@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dropdown auto-width — proposed behaviour</title>
+<style>
+  :root{
+    --ink:#1f2430; --muted:#6b7280; --line:#e4e7ec; --field:#d4d8df;
+    --orange:#ff4301; --orange-soft:#fff1ec; --bg:#f5f6f8; --card:#ffffff;
+    --sel:#ff4301; --ok:#1f9d57; --ng:#d23b2e;
+    --font:"Poppins","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;padding:34px 40px 46px;}
+  h1{font-size:23px;font-weight:600;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 26px;max-width:860px;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 22px 26px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
+  .card.full{grid-column:1 / -1;}
+  .tag{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+    letter-spacing:.02em;padding:4px 11px;border-radius:999px;margin-bottom:16px;text-transform:uppercase;}
+  .tag.now{background:#fdeceb;color:var(--ng);}
+  .tag.new{background:#e7f6ee;color:var(--ok);}
+  .cap{font-size:13px;color:var(--muted);margin:14px 2px 0;line-height:1.55;}
+  .row{display:flex;gap:14px;align-items:flex-start;}
+  .fieldlabel{font-size:12px;color:var(--muted);margin:0 0 6px 2px;font-weight:500;}
+  /* field (closed control) */
+  .field{height:52px;border:1.5px solid var(--field);border-radius:11px;background:#fff;
+    display:flex;align-items:center;padding:0 12px 0 16px;font-size:16px;color:var(--ink);
+    position:relative;white-space:nowrap;overflow:hidden;}
+  .field.focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-soft);}
+  .field .txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .field .car{display:flex;flex-direction:column;line-height:.7;color:#9aa1ad;font-size:12px;margin-left:10px;}
+  .w-now{width:190px;}         /* current fixed/narrow width */
+  .w-fit{width:270px;}         /* widened to fit <=30 chars */
+  .w-left{width:170px;}        /* the 'Line 1' neighbour */
+  /* open menu */
+  .menu{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#fff;
+    box-shadow:0 12px 30px rgba(16,24,40,.14);padding:7px;overflow:hidden;}
+  .opt{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:9px;
+    font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default;}
+  .opt .check{width:15px;color:var(--ink);flex:0 0 15px;}
+  .opt.sel{background:var(--orange);color:#fff;font-weight:500;}
+  .opt.tick{font-weight:600;}
+  .opt.trunc{overflow:hidden;text-overflow:ellipsis;}
+  /* tooltip */
+  .ttwrap{position:relative;}
+  .tooltip{position:absolute;left:14px;top:-40px;background:#1f2430;color:#fff;font-size:13px;
+    padding:7px 11px;border-radius:8px;white-space:nowrap;box-shadow:0 6px 18px rgba(16,24,40,.25);}
+  .tooltip:after{content:"";position:absolute;left:26px;bottom:-5px;width:10px;height:10px;
+    background:#1f2430;transform:rotate(45deg);}
+  .tooltip.right{left:286px;top:9px;}
+  .tooltip.right:after{left:-5px;top:15px;bottom:auto;}
+  .legend{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:26px;margin-top:4px;padding:16px 20px;
+    background:#fff;border:1px solid var(--line);border-radius:12px;}
+  .legend div{font-size:13px;color:#434a56;line-height:1.5;}
+  .legend b{color:var(--ink);}
+  .rule{display:inline-block;background:var(--orange-soft);color:#b4330a;font-weight:600;
+    padding:1px 7px;border-radius:6px;font-size:12px;}
+  .count{color:#9aa1ad;font-size:12px;margin-left:6px;}
+</style>
+</head>
+<body>
+  <h1>Dropdown auto-width — proposed behaviour</h1>
+  <p class="sub">Dropdowns size their width to the longest option so the full text is readable, down to a floor of
+  the field's current width and up to a cap at 30 characters. Options longer than 30 characters are truncated with an
+  ellipsis and reveal the full text on hover. Applies to every dropdown using this select component.</p>
+
+  <div class="grid">
+    <!-- CURRENT -->
+    <div class="card">
+      <span class="tag now">● Current</span>
+      <div class="row">
+        <div>
+          <p class="fieldlabel">Feature</p>
+          <div class="field w-left"><span class="txt">Line 1</span>
+            <span class="car">▲<br>▼</span></div>
+        </div>
+        <div>
+          <p class="fieldlabel">Reference position</p>
+          <div class="field w-now focus"><span class="txt">Perpendicula…</span>
+            <span class="car">▲<br>▼</span></div>
+          <div class="menu">
+            <div class="opt tick"><span class="check">✓</span>Start</div>
+            <div class="opt"><span class="check"></span>End</div>
+            <div class="opt"><span class="check"></span>Middle</div>
+            <div class="opt sel trunc"><span class="check"></span>Perpendicula…</div>
+            <div class="opt trunc"><span class="check"></span>Perpendicula…</div>
+          </div>
+        </div>
+      </div>
+      <p class="cap">The field is a fixed narrow width, so longer labels like <b>“Perpendicular from Start”</b> are cut to
+      <b>“Perpendicula…”</b> — in the field <i>and</i> in the menu. Two different options look identical.</p>
+    </div>
+
+    <!-- PROPOSED <=30 -->
+    <div class="card">
+      <span class="tag new">● Proposed · option ≤ 30 characters</span>
+      <div class="row">
+        <div>
+          <p class="fieldlabel">Feature</p>
+          <div class="field w-left"><span class="txt">Line 1</span>
+            <span class="car">▲<br>▼</span></div>
+        </div>
+        <div>
+          <p class="fieldlabel">Reference position</p>
+          <div class="field w-fit focus"><span class="txt">Perpendicular from Start</span>
+            <span class="car">▲<br>▼</span></div>
+          <div class="menu" style="width:270px">
+            <div class="opt tick"><span class="check">✓</span>Start</div>
+            <div class="opt"><span class="check"></span>End</div>
+            <div class="opt"><span class="check"></span>Middle</div>
+            <div class="opt sel"><span class="check"></span>Perpendicular from Start</div>
+            <div class="opt"><span class="check"></span>Perpendicular from End</div>
+          </div>
+        </div>
+      </div>
+      <p class="cap">The field grows to fit the longest option (24 chars, ≤ 30) — full text shown, nothing cut. It never
+      shrinks below the field's current width.</p>
+    </div>
+
+    <!-- PROPOSED >30 -->
+    <div class="card full">
+      <span class="tag new">● Proposed · option over 30 characters</span>
+      <div class="row" style="gap:40px;align-items:flex-start">
+        <div>
+          <p class="fieldlabel">Reference position</p>
+          <div class="ttwrap">
+            <div class="field w-fit focus"><span class="txt">Perpendicular from Start of L…</span>
+              <span class="car">▲<br>▼</span></div>
+            <div class="tooltip right">Perpendicular from Start of Line&nbsp;1</div>
+          </div>
+          <div class="menu" style="width:270px">
+            <div class="opt"><span class="check"></span>Start</div>
+            <div class="opt"><span class="check"></span>Middle</div>
+            <div class="opt sel trunc"><span class="check"></span>Perpendicular from Start of L…</div>
+            <div class="opt trunc"><span class="check"></span>Perpendicular from End of Lin…</div>
+          </div>
+        </div>
+        <div style="flex:1;padding-top:74px">
+          <p class="cap" style="margin-top:0">The option text exceeds 30 characters, so the field stays at the 30-character
+          cap and the label is truncated with an ellipsis — in both the field and the menu. Hovering the truncated label
+          (field or menu item) shows the full text in a tooltip, so nothing is unreadable.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div><b>Minimum width</b><br>= the field's current width. Dropdowns never get narrower than today.</div>
+      <div><b>Grows to fit</b> <span class="rule">≤ 30 chars</span><br>Width expands to the longest option so it shows in full.</div>
+      <div><b>Cap + truncate</b> <span class="rule">&gt; 30 chars</span><br>Width stops at the 30-char point; extra text → “…”.</div>
+      <div><b>Hover tooltip</b><br>Any truncated label reveals its full text on hover.</div>
+    </div>
+  </div>
+</body>
+</html>
